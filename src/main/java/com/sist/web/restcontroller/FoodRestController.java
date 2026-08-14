@@ -24,7 +24,7 @@ public class FoodRestController {
 			int[] pages=fService.foodListPage(page);
 			String[] tags= {"curpage","totalpage","startPage","endPage","count"};
 			map.put("list", list);
-			for(int i=0;i<=pages.length;i++) {
+			for(int i=0;i<pages.length;i++) {
 				map.put(tags[i], pages[i]);
 			}
 		}catch(Exception ex) {

@@ -1,8 +1,60 @@
 <!DOCTYPE html>
 <html>
-	<div class="container">
+<style>
+.row{
+	margin: 0px auto;
+	width: 960px
+}
+p{
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.a-link{
+	text-decoration: none;
+	color: black;
+	cursor: pointer
+}
+</style>
+	<div class="container" id="foodApp">
 		<div class="row">
-			<h3 class="text-center">맛집</h3>
+			총 <span style="color:green;font-size:20px;font-weight: bold;">{{parseInt(store.count).toLocaleString()}}</span> 개의 음식점이 있습니다.
+		</div>
+		<div class="row" style="margin-top: 10px">
+			<div class="col-sm-3" v-for="(vo,index) in store.list" :key="index">
+				<a :href="'http://localhost:8080/food/detail?no='+vo.no" class="a-link">
+					<div class="thumbnail">
+						<img :src="vo.poster" :title="vo.address" style="width: 240px;height: 130px">
+						<p>{{vo.name}}</p>
+					</div>
+				</a>
+			</div>
+		</div>
+		<div class="row text-center" style="margin-top: 10px">
+			<ul class="pagination">
+				<li v-if="store.startPage>1"><a class="a-link" @click="store.move(store.startPage-1)">&laquo;</a></li>
+				<li v-for="(i,index) in store.range" :key="index" :class="store.curpage===i?'active':''"><a class="a-link" @click="store.move(i)">{{i}}</a></li>
+				<li v-if="store.endPage<store.totalpage"><a class="a-link" @click="store.move(store.endPage+1)">&raquo;</a></li>
+			</ul>
 		</div>
 	</div>
+<script src="/vue/axios.js"></script>
+<script src="/vue/food/foodStore.js"></script>
+<script>
+const{createApp,onMounted,ref}=Vue
+const{createPinia}=Pinia
+const foodApp=createApp({
+	setup(){
+		const store=useFoodStore()
+		onMounted(()=>{
+			store.foodListData()
+		})
+		return {
+			store
+		}
+	}
+})
+foodApp.use(createPinia())
+foodApp.mount('#foodApp')
+</script>
 </html>
