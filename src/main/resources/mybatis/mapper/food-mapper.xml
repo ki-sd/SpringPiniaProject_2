@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sist.web.mapper.FoodMapper">
+	<select id="foodListData" resultType="com.sist.web.vo.FoodVO" parameterType="int">
+		SELECT no,name,poster,address
+		FROM food
+		ORDER BY no
+		OFFSET #{start} ROWS FETCH NEXT 12 ROWS ONLY
+	</select>
+	<select id="foodCount" resultType="int">
+		SELECT COUNT(*)
+		FROM food
+	</select>
+	<select id="foodDetailData" resultType="com.sist.web.vo.FoodVO" parameterType="int">
+		SELECT no,likecount,replycount,jjimcount,hit,name,poster,address,type,phone,price,theme,time,reserve,parking,content,images,score
+		FROM food
+		WHERE no=#{no}
+	</select>
+	<update id="foodHitIncrement" parameterType="int">
+		UPDATE food
+		SET hit=hit+1
+		WHERE no=#{no}
+	</update>
+	<select id="foodFindData" resultType="com.sist.web.vo.FoodVO" parameterType="hashmap">
+		SELECT no,name,poster,address
+		FROM food
+		WHERE ${type} LIKE CONCAT('%',#{fd},'%')
+		ORDER BY no
+		OFFSET #{start} ROWS FETCH NEXT 12 ROWS ONLY
+	</select>
+	<select id="foodFindCount" resultType="int" parameterType="hashmap">
+		SELECT COUNT(*)
+		FROM food
+		WHERE ${type} LIKE CONCAT('%',#{fd},'%')
+	</select>
+</mapper>
