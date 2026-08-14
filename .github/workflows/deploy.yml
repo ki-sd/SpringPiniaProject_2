@@ -24,9 +24,9 @@ jobs:
           echo "========================"
           rm -f .env
           touch .env
-          echo "DB_URL="${{secrets.DB_URL}}">> .env
-          echo "DB_USERNAME="${{secrets.DB_USERNAME}}">> .env
-          echo "DB_PASSWORD="${{secrets.DB_PASSWORD}}">> .env
+          echo "DB_URL=${{secrets.DB_URL}}">> .env
+          echo "DB_USERNAME=${{secrets.DB_USERNAME}}">> .env
+          echo "DB_PASSWORD=${{secrets.DB_PASSWORD}}">> .env
           echo ".env 생성 및 저장 완료"
       # gradlew 권한 부여
       - run: chmod +x gradlew
@@ -40,6 +40,6 @@ jobs:
           docker rm food-app || true
       # 새로운 도커 실행 (컨테이너)
       - run: |
-          docker run --name mini-app -d --env-file .env -p 8080:8080 food-app
+          docker run --name mini-app -d --env-file .env -p 9090:9090 food-app
         env:
          RUNNER_TRACKING_ID: ""
