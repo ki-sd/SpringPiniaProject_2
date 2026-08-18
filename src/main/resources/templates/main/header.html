@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 	<nav class="navbar navbar-inverse">
 		<div class="container-fluid">
 			<div class="navbar-header">
@@ -12,7 +13,7 @@
 						<span class="caret"></span></a>
 				<ul class="dropdown-menu">
 					<li><a href="/food/find">맛집 검색</a></li>
-					<li><a href="#">맛집 추천</a></li>
+					<li sec:authorize=""><a href="#">맛집 추천</a></li>
 				</ul>
 				</li>
 				<li class="dropdown">
