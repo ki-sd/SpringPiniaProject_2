@@ -120,9 +120,9 @@ public class SecurityConfig {
 	@Bean
 	public UserDetailsService userDetailsService() {
 	    UserDetails user = User.builder()
-	            .username("hong")
+	            .username("admin")
 	            .password(passwordEncoder().encode("1234"))
-	            .roles("USER")
+	            .roles("ADMIN")
 	            .build();
 	    return new InMemoryUserDetailsManager(user);
 	}
