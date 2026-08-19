@@ -4,5 +4,5 @@ services:
    build: .
    container_name: pinia-app
    ports:
-     - "9090:9090"
+    - "9090:9090"
    restart: always
