@@ -37,7 +37,7 @@ jobs:
       # DockerHub 연결
       - run: echo "${{secrets.DOCKER_PASSWORD}}" | docker login -u "${{secrets.DOCKER_NAME}}" --password-stdin
       # DockerHub Push
-      - run: docker push kisd09/pinia-app 
+      - run: docker push "${{secrets.DOCKER_NAME}}"/pinia-app 
       # 기존 컨테이너 종료
       - run: docker compose down
       # 최신 Docker 실행
