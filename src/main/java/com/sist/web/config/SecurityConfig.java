@@ -118,7 +118,7 @@ public class SecurityConfig {
 	 */
 	// 인증 관리자
 	@Bean
-	public UserDetailsService userDetailsService() {
+	public UserDetailsService jdbcUserDetailsService() {
 	    UserDetails user = User.builder()
 	            .username("admin")
 	            .password(passwordEncoder().encode("1234"))
