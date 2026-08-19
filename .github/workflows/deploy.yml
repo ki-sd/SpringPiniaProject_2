@@ -34,10 +34,12 @@ jobs:
       - run: ./gradlew clean build -x test
       # 도커이미지 생성
       - run: docker build -t pinia-app .
+      # Docker Tag 생성
+      - run: docker tag pinia-app ${{secrets.DOCKER_NAME}}/pinia-app:latest
       # DockerHub 연결
       - run: echo "${{secrets.DOCKER_PASSWORD}}" | docker login -u "${{secrets.DOCKER_NAME}}" --password-stdin
       # DockerHub Push
-      - run: docker push "${{secrets.DOCKER_NAME}}"/pinia-app 
+      - run: docker push ${{secrets.DOCKER_NAME}}/pinia-app :latest
       # 기존 컨테이너 종료
       - run: docker compose down
       # 최신 Docker 실행
