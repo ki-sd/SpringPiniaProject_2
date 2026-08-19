@@ -31,15 +31,20 @@ jobs:
       # gradlew 권한 부여
       - run: chmod +x gradlew
       # 빌드 
-      - run: ./gradlew clean build -x test
+      - run: ./gradlew build -x test --build-cache --parallel --no-daemon
       # 도커이미지 생성
-      - run: docker build -t food-app .
-      # 기존 도커 프로세스 중지/삭제
-      - run: |
-          docker stop food-app || true
-          docker rm food-app || true
-      # 새로운 도커 실행 (컨테이너)
-      - run: |
-          docker run --name food-app -d --env-file .env -p 9090:9090 food-app
+      - run: docker build -t pinia-app .
+      # Docker Tag 생성
+      - run: docker tag pinia-app ${{secrets.DOCKER_NAME}}/pinia-app:latest
+      # DockerHub 연결
+      - run: echo "${{secrets.DOCKER_PASSWORD}}" | docker login -u "${{secrets.DOCKER_NAME}}" --password-stdin
+      # DockerHub Push
+      - run: docker push ${{secrets.DOCKER_NAME}}/pinia-app:latest
+      # 기존 컨테이너 종료
+      - run: docker compose down
+      # 최신 Docker 실행
+      - run: docker compose pull
+      # 새로운 도커 컨테이너 실행
+      - run: docker compose up -d
         env:
          RUNNER_TRACKING_ID: ""
