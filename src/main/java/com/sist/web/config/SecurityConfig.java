@@ -5,6 +5,7 @@ import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 
 import com.sist.web.security.LoginFailHandler;
@@ -61,6 +63,57 @@ import lombok.RequiredArgsConstructor;
  *           /user => hasRole("ROLE_USER")
  *           /board => pertmitAll
  *           /member => permitAll
+ *           
+ *           
+ *      동작 (실행순서)
+ *        /member/login
+ *              |
+ *        /member/login_process
+ *        ----------------------
+ *              |
+ *         SecurityFilterChain
+ *              |
+ *              UsernamePasswordAuthenticationFilter
+ *                => .usernameParameter("userid")
+ *                                      -------- <input type="text" name="userid">
+ *                   => String username=request.getParameter("userid");
+ *                => .passwordParameter("userpwd")
+ *                   => 암호화된 비밀번호 / 비밀번호 비교
+ *                         |             |
+ *                         --------------- > match encoder()
+ *                                             |       |
+ *                                             ---------
+ *              |
+ *         AuthenticationManager
+ *              |
+ *         AuthenticationProvider
+ *              |
+ *         JdbcUserDetailsManager
+ *              | DB조회
+ *                member/authority
+ *              |
+ *         UserDetails 생성
+ *              |
+ *         BCryptPasswordEncoder
+ *              | 비밀번호 비교
+ *             인증
+ *              |
+ *      --------------------
+ *      |                  |
+ *     성공                실패
+ *                      LoginFailHandler
+ *   LoginSuccessHandler
+ *          |
+ *      SecurityContext
+ *          |
+ *      Session에 저장
+ *          |
+ *      사용자 인증 완료
+ *     /member/login_process
+ *     ---------------------
+ *     Controller가 아니라
+ *     SecurityContext가 인터셉트해서 처리
+ *            
  */
 public class SecurityConfig {
 	private final LoginSuccessHandler loginSuccessHandler;
@@ -68,6 +121,9 @@ public class SecurityConfig {
 	private final DataSource dataSource;
 	
 	// 접근권한 => SecurityFilterChain
+	/*
+	 *     HTTP요청이 있는 경우 Spring Security가 어떻게 처리할지 지시 (설정)
+	 */
 	@Bean
 	public SecurityFilterChain filterChain (HttpSecurity http) throws Exception {
 		// 공격 방어
@@ -79,16 +135,69 @@ public class SecurityConfig {
 		 */
 		http
 			.csrf(csrf->csrf.disable())
+			// 접근 권한 설정 (URL)
 			.authorizeHttpRequests(auth->auth
 									.requestMatchers("/","/member/**").permitAll()
+									// 로그인 없이 접근 가능
 									.requestMatchers("/admin/**").hasRole("ADMIN")
+									// ADMIN권한이 있는 사람만 접근 가능
 									.anyRequest().permitAll()
+									// 지정이 안된 URL 주소
 			)
 			.formLogin(form->form
 							.loginPage("/member/login")
+							// 로그인 화면창 설정 => 설정 없는경우 default login
 							.loginProcessingUrl("/member/login_process")
+							// 중요
+							// 로그인 처리를 담당하는 URL => Security에서 인터셉트
+							// Controller에서 처리하는게 아님 => SecurityFilter에서 인터셉트해서 처리
+							/*
+							 *     Security 처리
+							 *     개발자 처리 => Controller/RestController
+							 */
 							.usernameParameter("userid")
 							.passwordParameter("userpwd")
+							// => 로그인 처리를 위해서 id,pwd 전송
+							// id = username / pwd = password
+							/*
+							 *     UsernamePasswordAuthenticationFilter
+							 *     => String username=request.getParameter("userid");
+							 *        String password=request.getParameter("userpwd");
+							 *     => 인증객체로 전송
+							 *        Authentication
+							 *          | - username=user01
+							 *          | - password=1234
+							 *     => AuthenticationManager
+							 *        => authenticationManager() 호출
+							 *              |
+							 *           userDetailsService(jdbcUserDetailsManager())
+							 *                               | DB검색 (SQL)
+							 *                  | - 사용자 정보 => UserDetailsService
+							 *           passwordEncoder(passwordEncoder())
+							 *                  | - 비밀번호 비교 => PasswordEncoder
+							 *        => UserDetails에 정보 저장
+							 *           -------------------- Session형식 => Principal
+							 *           
+							 *     인증 성공
+							 *        |
+							 *     userid 존재
+							 *        |
+							 *     UserDetails 생성
+							 *        |
+							 *     권한 확인
+							 *        |
+							 *     비밀번호 확인
+							 *        |
+							 *  인증성공 / 인증실패
+							 *  
+							 *  ==>
+							 *     SecurityContext
+							 *            |
+							 *            Authentication
+							 *              | - Principal (UserDetails)
+							 *              | - authorities
+							 *              | - authenticated = true
+							 */
 							.defaultSuccessUrl("/",false)
 							.successHandler(loginSuccessHandler)
 							.failureHandler(loginFailHandler)
@@ -98,7 +207,33 @@ public class SecurityConfig {
 							.key("my-secret-key")
 							.rememberMeParameter("remember-me")
 							.tokenValiditySeconds(60*60*24)
+							.tokenRepository(persistentTokenRepository())
+							// persistent_logins 테이블에 저장
+							/*
+							 *    로그인
+							 *      |
+							 *    remember-me 체크 => true
+							 *      |
+							 *    토큰 생성 => 구분자
+							 *      |
+							 *    JdbcTokenRepositoryImpl
+							 *      |
+							 *    DB저장
+							 *    ---- persistent_logins
+							 *         username / series / token / last_used
+							 */
 			)
+			/*
+			 *      /member/logout
+			 *          |
+			 *      Spring Security LogoutFilter
+			 *          |
+			 *      SecurityContext 제거
+			 *          |
+			 *      Session 제거
+			 *          |
+			 *      Cookie 삭제
+			 */
 			.logout(logout->logout
 							.logoutUrl("/member/logout")
 							.logoutSuccessUrl("/")
@@ -117,36 +252,148 @@ public class SecurityConfig {
 	 *    remember-me
 	 */
 	// 인증 관리자
-	@Bean
-	public UserDetailsService jdbcUserDetailsService() {
-	    UserDetails user = User.builder()
-	            .username("admin")
-	            .password(passwordEncoder().encode("1234"))
-	            .roles("ADMIN")
-	            .build();
-	    return new InMemoryUserDetailsManager(user);
-	}
-
-	@Bean
-	public BCryptPasswordEncoder passwordEncoder() {
-	    return new BCryptPasswordEncoder();
-	}
+	// 임시 더미
 //	@Bean
-//	public AuthenticationManager authenticationManager(HttpSecurity http, BCryptPasswordEncoder passwordEncoder) throws Exception{
-//		return null;
+//	public UserDetailsService jdbcUserDetailsService() {
+//	    UserDetails user = User.builder()
+//	            .username("admin")
+//	            .password(passwordEncoder().encode("1234"))
+//	            .roles("ADMIN")
+//	            .build();
+//	    return new InMemoryUserDetailsManager(user);
 //	}
-//	@Bean
-//	public JdbcUserDetailsManager jdbcUserDetailsService() {
-//		return null;
-//	}
-//	// 비밀번호 암호화
+//
 //	@Bean
 //	public BCryptPasswordEncoder passwordEncoder() {
-//		return new BCryptPasswordEncoder();
+//	    return new BCryptPasswordEncoder();
 //	}
-//	// PersistentLogins 등록
-//	@Bean
-//	public PersistentTokenRepository persistentTokenRepository() {
-//		return null;
-//	}
+	@Bean
+	   public AuthenticationManager authenticationManager(
+	      HttpSecurity http,
+	      BCryptPasswordEncoder passwordEncoder
+	   ) throws Exception
+	   {
+		   AuthenticationManagerBuilder builder=
+				   http.getSharedObject(AuthenticationManagerBuilder.class);
+		   builder
+		     .userDetailsService(jdbcUserDetailsService())
+		     .passwordEncoder(passwordEncoder());
+		   return builder.build();
+	   }
+	   @Bean
+	   public JdbcUserDetailsManager jdbcUserDetailsService() {
+		   JdbcUserDetailsManager manager=
+				   new JdbcUserDetailsManager(dataSource);
+		   manager.setUsersByUsernameQuery(
+				   "SELECT userid as username,userpwd as password,enable "
+				   +"FROM springmember WHERE userid=?"
+		   );
+		   manager.setAuthoritiesByUsernameQuery(
+				   "SELECT userid as username , authority "
+				  +"FROM authority WHERE userid=?"
+		   );
+		   return manager;
+	   }
+	   @Bean
+	   public BCryptPasswordEncoder passwordEncoder() {
+		   return new BCryptPasswordEncoder();
+	   }
+	   @Bean
+	   public PersistentTokenRepository persistentTokenRepository() {
+	       JdbcTokenRepositoryImpl repo = new JdbcTokenRepositoryImpl();
+	       repo.setDataSource(dataSource);
+	       return repo;
+	   }
+	   
+	   /*
+	    *     [사용자]
+	    *       | POST => /member/login_procss
+	    *     ------------------------------
+	    *       Spring Security FilterChain 
+	    *     ------------------------------
+	    *              |
+	    *     UsernamePasswordAuthenticationFilter
+	    *              |  username
+	    *              |  password
+	    *                 .usernameParameter("userid")
+	   	               .passwordParameter("userpwd")
+	   	            |
+	   	     -------------------------
+	   	       AuthenticationManager
+	   	     -------------------------
+	   	            |
+	   	       AuthenticationProvider
+	   	            |
+	   	       JdbcUserDetailsManager  
+	   	            | DB 검색 
+	   	      ------------------------
+	   	      |                      |
+	   	    springmember           authority => username이 존재
+	   	    (기본 사용자 정보)         (권한 정보)
+	   	         |                    |
+	   	         ----------------------
+	   	                  |
+	    *                 UserDetails
+	    *                    |
+	    *               BCrytPasswordEncoder
+	    *                    |
+	    *                 비밀번호 검증 
+	    *                    |
+	    *        -------------------------------
+	    *        |                             |
+	    *       성공                           실패
+	    *        |                             |
+	    *      LoginSeccessHandler         LoginFailHandler
+	    *        |
+	    *       SecurityContext 
+	    *        |
+	    *       Session에 저장 
+	    *        |
+	    *       인증 완료
+	    *       
+	    *       ------------------------------------
+	    *       라이브러리 역할 
+	    *       @EnableWebSecurity => Spring Security 활성화 
+	    *                             => 사용하기 위해 
+	    *       1. SecurityConfig : 보안 전체 설정을 담당 
+	    *                           => 사용자 정의 
+	    *       2. HttpSecurity : 로그인 / 로그아웃 /권한 / CSRF보안 설정 구성 
+	    *       3. SecurityFilterChain : HTTP 요청에 대한 Spring Security 필처 처리 순서 정의
+	    *       4. AuthenticationManager : 사용자의 인증 과정을 총괄 
+	    *       5. AuthenticationProvider : 실제 사용자 인증을 수행하는 객체 
+	    *             => login_ok
+	    *       6. UserDetailsService : 로그인한 사용자의 정보를 조회 
+	    *       7. JdbcUserDetailsManager
+	    *             => DB에서 사용자/권한 정보를 조회해서 
+	    *                저장하는 역할 : SQL 사용 
+	    *       8. UserDetails : 사용자 정보가 저장된 객체 
+	    *       9. BCryptPasswordEncoder : 비밀번호 암호화 처리 
+	    *       10. JdbcTokenRepositoryImpl : 자동 로그인시 사용자 구분 토큰을 저장하는 역할 
+	    *       11. LoginSuccessHandler : 로그인 성공시 처리 
+	    *       12. LoginFailHandler : 로그인 실패시 처리 
+	    *       13. SecurityContext : 인증 정보를 보관하는 클래스
+	    *       14. formLogin : 로그인시 처리 방법 설정 
+	    *       15. rememberMe: 자동로그인 설정 
+	    *       16. logout : => session해제 / cookie 삭제 
+	    *       
+	    *       Filter - Manager = UserDetailsService - DB
+	    *              - PasswordEncoder 
+	    *              - Authentication 
+	    *              - SecurityContext
+	    *        => DB 
+	    *           회원정보 / 권한 
+	    *              |
+	    *           Authentication 
+	    *              |-로그인된 사용자 정보
+	    *           SecurityContext 
+	    *              | -  Authentication 보관 
+	    *           Session 
+	    *              로그인 상태 유지 
+	    *              
+	    *       ---------------------------------
+	    *       인증 AuthenticationManager
+	    *       성공 Authentication -> SecurityContext
+	    *       유지 Session (remember-me)
+	    *                     | cookie + DB
+	   */
 }

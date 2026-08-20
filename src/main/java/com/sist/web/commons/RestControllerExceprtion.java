@@ -7,13 +7,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class RestControllerExceprtion {
 	@ExceptionHandler(Exception.class)
 	public void exception(Exception ex) {
-		System.out.println("==============예외 발생===============");
-		ex.printStackTrace();
+		System.err.println("==============예외 발생===============");
+		ex.getMessage();
 	}
 	@ExceptionHandler(Throwable.class)
 	public void throwable(Throwable ex) {
-		System.out.println("==============에러 발생===============");
-		ex.printStackTrace();
+		System.err.println("==============에러 발생===============");
+		ex.getMessage();
 	}
 
 }

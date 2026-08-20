@@ -27,9 +27,31 @@
 				</li>
 				<li><a href="#">실시간 채팅</a></li>
 			</ul>
+			
 			<ul class="nav navbar-nav navbar-right">
-				<li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
-				<li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+				<li sec:authorize="!isAuthenticated()"><a href="#"><span class="glyphicon glyphicon-user"></span> 회원가입</a></li>
+				<li sec:authorize="!isAuthenticated()"><a href="/member/login"><span class="glyphicon glyphicon-log-in"></span> 로그인</a></li>
+				<li sec:authorize="isAuthenticated()">
+				<li sec:authorize="hasRole('ADMIN')">
+					<a href="#">
+						<span th:text="${session.username}"></span>(관리자) 님 로그인되었습니다
+					</a>
+				</li>
+				<li sec:authorize="hasRole('MANAGER')">
+					<a href="#">
+						<span th:text="${session.username}"></span>(운영자) 님 로그인되었습니다
+					</a>
+				</li>
+				<li sec:authorize="hasRole('USER')">
+					<a href="#">
+						<span th:text="${session.username}"></span>(일반사용자) 님 로그인되었습니다
+					</a>
+				</li>
+				<li sec:authorize="isAuthenticated()">
+					<a href="/member/logout">
+						<span class="glyphicon glyphicon-log-in"></span> 로그아웃
+					</a>
+				</li>
 			</ul>
 		</div>
 	</nav>
