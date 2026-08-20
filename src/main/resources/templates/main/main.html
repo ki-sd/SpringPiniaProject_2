@@ -14,7 +14,7 @@
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=11d9ddda40237b2daef1ba924fe29451&libraries=services"></script>
 </head>
 <body>
-	<th:block th:include="main/header"></th:block>
-	<th:block th:include="${main_html}"></th:block>
+	<th:block th:insert="~{main/header}"></th:block>
+	<th:block th:insert="~{${main_html}}"></th:block>
 </body>
 </html>
