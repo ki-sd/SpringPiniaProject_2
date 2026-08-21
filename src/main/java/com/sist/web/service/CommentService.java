@@ -7,4 +7,6 @@ public interface CommentService {
 	public List<CommentVO> commentListData(Map map);
 	public int[] commentPageData(int page,int fno);
 	public void commentInsert(CommentVO vo);
+	public void commentDelete(int no);
+	public void commentUpdate(CommentVO vo);
 }

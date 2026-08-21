@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
 	xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<script>
+<script th:inline="javascript">
 const NO=/*[[${no}]]*/ 0
+const SESSION_ID=/*[[${session.userid}]]*/ ''
+
+console.log("NO="+NO)
+console.log("ID="+SESSION_ID)
 </script>
 <style>
 .row{
 	width: 900px;
 	margin: 0px auto
+}
+.a-link{
+	cursor: pointer
 }
 </style>
 	<div class="container">
@@ -114,7 +121,89 @@ const NO=/*[[${no}]]*/ 0
 			</table>
 		</div>
 		<div class="row" style="margin-top: 10px" id="commentId">
-			
+			<table class="table" v-if="store.count===0">
+				<tbody>
+					<tr>
+						<td class="text-center">
+							<h3>댓글이 없습니다</h3>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<table class="table" v-if="store.count!==0">
+				<tbody>
+					<tr>
+						<td>
+							<table class="table" v-for="(rvo,index) in store.rList" :key="index">
+								<tbody>
+									<tr>
+										<td width="80%" class="text-left">
+											{{rvo.name}} ({{rvo.dbday}})
+										</td>
+										<td width="20%" class="text-right">
+											<a class="a-link btn btn-xs btn-info" v-if="rvo.id===store.sessionId" @click="store.toggleUpdate(rvo.no,rvo.msg)">{{store.upReplyNo===rvo.no?'취소':'수정'}}</a>
+											<a class="a-link btn btn-xs btn-warning" v-if="rvo.id===store.sessionId" @click="store.commentDelete(rvo.no)">삭제</a>
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2" style="white-space: pre-wrap">{{rvo.msg}}</td>
+									</tr>
+									<tr v-if="store.upReplyNo===rvo.no">
+										<td colspan="2">
+											<textarea rows="5" cols="100" style="float: left" ref="msgRef" v-model="store.updateMsg[rvo.no]">{{rvo.msg}}</textarea>
+											<button type="button" class="btn-primary" style="height: 108px;float: left;width: 70px;margin-left: 10px" @click="store.commentUpdate(rvo.no)">수정</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+							<table class="table">
+								<tbody>
+									<tr>
+										<td class="text-center">
+											<button type="button" class="btn-sm btn-primary" @click="store.move(store.curpage-1)" v-if="store.curpage>1">이전</button>
+											{{store.curpage}} page / {{store.totalpage}} pages
+											<button type="button" class="btn-sm btn-primary" @click="store.move(store.curpage+1)" v-if="store.curpage<store.totalpage">다음</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<table class="table" sec:authorize="isAuthenticated()">
+				<tbody>
+					<tr>
+						<td class="text-center">
+							<textarea rows="5" cols="110" style="float: left" ref="msgRef" v-model="store.msg"></textarea>
+							<button type="button" class="btn-primary" style="height: 108px;float: left;width: 70px;margin-left: 10px" @click="store.commentInsert(msgRef)">댓글</button>
+						</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 	</div>
+<script src="/vue/axios.js"></script>
+<script src="/vue/comment/commentStore.js"></script>
+<script>
+const {onMounted,ref,createApp}=Vue
+const {createPinia}=Pinia
+const commentApp=createApp({
+	setup(){
+		const store=useCommentStore()
+		const msgRef=ref(null)
+		onMounted(()=>{
+			store.sessionId=SESSION_ID
+			store.fno=NO
+			store.commentListData(NO)
+		})
+		return {
+			store,
+			msgRef
+		}
+	}
+})
+commentApp.use(createPinia())
+commentApp.mount('#commentId')
+</script>
 </html>

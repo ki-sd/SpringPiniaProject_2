@@ -28,4 +28,6 @@ public interface CommentMapper {
 	public List<CommentVO> commentListData(Map map);
 	public int commentRowCount(int fno);
 	public void commentInsert(CommentVO vo);
+	public void commentDelete(int no);
+	public void commentUpdate(CommentVO vo);
 }
