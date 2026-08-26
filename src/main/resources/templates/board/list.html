@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<style>
+.row{
+	width: 800px;
+	margin: 0px auto
+}
+h3{
+	text-align: center
+}
+a{
+	color: black;
+	text-decoration: none
+}
+</style>
+	<div class="container">
+		<div class="row">
+			<h3>자유 게시판</h3>
+			<table class="table">
+				<tbody>
+					<tr>
+						<td>
+							<a href="/board/insert" class="btn btn-sm btn-danger">새글</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<table class="table">
+				<thead>
+					<tr class="success">
+						<th class="text-center" width="10%">번호</th>
+						<th class="text-center" width="45%">제목</th>
+						<th class="text-center" width="15%">이름</th>
+						<th class="text-center" width="20%">작성일</th>
+						<th class="text-center" width="10%">조회수</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="vo:${list}">
+						<td class="text-center" width="10%">[[${vo.no}]]</td>
+						<td width="45%"><a th:href="@{/board/detail(no=${vo.no})}">[[${vo.subject}]]</a></td>
+						<td class="text-center" width="15%">[[${vo.name}]]</td>
+						<td class="text-center" width="20%">[[${#temporals.format(vo.regdate,'yyyy-MM-dd')}]]</td>
+						<td class="text-center" width="10%">[[${vo.hit}]]</td>
+					</tr>
+					<tr>
+						<td colspan="5" class="text-center">
+							<ul class="pagination">
+								<li th:if="${startPage>1}"><a th:href="@{/board/list(page=${startPage-1})}">&laquo;</a></li>
+								<li th:each="i:${#numbers.sequence(startPage,endPage)}" th:class="${curpage==i?'active':''}"><a th:href="@{/board/list(page=${i})}">[[${i}]]</a></li>
+								<li th:if="${endPage<totalpage}"><a th:href="@{/board/list(page=${endPage+1})}">&raquo;</a></li>
+							</ul>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</html>

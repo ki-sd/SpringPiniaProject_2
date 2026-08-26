@@ -13,10 +13,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer{
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker(
                 "/topic",
-                "/queue"
+                "/queue",
+                "/sub"
         );
         registry.setApplicationDestinationPrefixes(
-                "/app"
+                "/app",
+                "/pub"
         );
         registry.setUserDestinationPrefix(
                 "/user"
