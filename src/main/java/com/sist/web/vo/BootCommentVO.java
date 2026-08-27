@@ -17,7 +17,7 @@ import lombok.Data;
 //DEPTH               NUMBER\
 @Data
 public class BootCommentVO {
-	private int no,board_no,group_id,group_step,group_tab,root,depth;
+	private int no,board_no,group_id,group_step,group_tab,root,depth,page;
 	private String id,name,msg,dbday;
 	private Date regdate;
 }

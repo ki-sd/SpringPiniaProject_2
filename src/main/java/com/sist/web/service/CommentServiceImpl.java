@@ -1,8 +1,10 @@
 package com.sist.web.service;
 import java.util.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sist.web.mapper.CommentMapper;
+import com.sist.web.vo.BootCommentVO;
 import com.sist.web.vo.CommentVO;
 
 import lombok.RequiredArgsConstructor;
@@ -41,5 +43,6 @@ public class CommentServiceImpl implements CommentService {
 	public void commentUpdate(CommentVO vo) {
 		mapper.commentUpdate(vo);
 	}
+
 
 }

@@ -150,7 +150,7 @@ console.log("ID="+SESSION_ID)
 									</tr>
 									<tr v-if="store.upReplyNo===rvo.no">
 										<td colspan="2">
-											<textarea rows="5" cols="100" style="float: left" ref="msgRef" v-model="store.updateMsg[rvo.no]">{{rvo.msg}}</textarea>
+											<textarea rows="5" cols="100" style="float: left" ref="msgRef" v-model="store.replyMsg[rvo.no]">{{rvo.msg}}</textarea>
 											<button type="button" class="btn-primary" style="height: 108px;float: left;width: 70px;margin-left: 10px" @click="store.commentUpdate(rvo.no)">수정</button>
 										</td>
 									</tr>

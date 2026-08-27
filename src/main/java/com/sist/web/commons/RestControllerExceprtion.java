@@ -8,12 +8,12 @@ public class RestControllerExceprtion {
 	@ExceptionHandler(Exception.class)
 	public void exception(Exception ex) {
 		System.err.println("==============예외 발생===============");
-		ex.getMessage();
+		ex.printStackTrace();
 	}
 	@ExceptionHandler(Throwable.class)
 	public void throwable(Throwable ex) {
 		System.err.println("==============에러 발생===============");
-		ex.getMessage();
+		ex.printStackTrace();
 	}
 
 }
