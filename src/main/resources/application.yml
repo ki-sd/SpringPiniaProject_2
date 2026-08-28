@@ -15,6 +15,23 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
 
+#  kafka:
+#    bootstrap-servers: localhost:9092
+#    producer: # Kafka로 메세지를 보내는 Producer 설정
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer # Key = String 형태로 변환
+#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # ChatMessage => 객체를 JSON형태로 변환 = Kafka로 전송
+#
+#    consumer: # 메세지를 읽는 Consumer 클래스 생성
+#      group-id: notification-group
+#      auto-offset-reset: earliest # 저장된 Offset이 없으면 가장 오래된 메세지부터 읽는다
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # Key = String 형태로 변환
+#      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer # JSON 변경
+#      properties:
+#        "[spring.json.trusted.packages]": com.sist.web.vo
+## Listener => JSON 역직렬화
+#    listener:
+#      ack-mode: record # 메세지 1개 (record) 처리 후 => Offset Commit
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}

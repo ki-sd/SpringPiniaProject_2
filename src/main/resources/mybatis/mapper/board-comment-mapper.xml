@@ -32,10 +32,10 @@
             REFERENCES springmember(userid)
          -->
     <insert id="boardCommentInsert" parameterType="com.sist.web.vo.BootCommentVO">
-        <selectKey keyProperty="no" resultType="int" order="BEFORE">
+        <!-- <selectKey keyProperty="no" resultType="int" order="BEFORE">
             SELECT NVL(MAX(no)+1,1) as no
             FROM bootComment
-        </selectKey>
+        </selectKey> -->
         INSERT INTO bootComment(board_no, id, name, msg, group_id)
         VALUES(#{board_no}, #{id}, #{name}, #{msg}, (SELECT NVL(MAX(group_id)+1,1) FROM bootComment))
     </insert>

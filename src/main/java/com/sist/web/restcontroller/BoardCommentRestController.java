@@ -16,6 +16,7 @@ import com.sist.web.vo.*;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
+import com.sist.web.kafka.NoticeProducer;
 import com.sist.web.mapper.*;
 import com.sist.web.service.BoardCommentService;
 
@@ -25,9 +26,10 @@ public class BoardCommentRestController {
 	private final BoardCommentMapper bMapper;
 	private final BoardCommentService bService;
 	private final SimpMessagingTemplate template;
+	private final NoticeProducer nProducer;
 	// => insert/update/delete => 화면 데이터 갱신
-	public Map commentListData(int page, int board_no) {
-		Map map=new HashMap();
+	public Map<String,Object> commentListData(int page, int board_no) {
+		Map<String,Object> map=new HashMap<>();
 		int start=(page*10)-10;
 		map.put("start", start);
 		map.put("board_no", board_no);
@@ -36,7 +38,7 @@ public class BoardCommentRestController {
 		int count=bMapper.boardCommentCount(board_no);
 		int totalpage=(int)(Math.ceil(count/10.0));
 		
-		map=new HashMap();
+		map=new HashMap<>();
 		map.put("list", list);
 		map.put("curpage", page);
 		map.put("totalpage", totalpage);
@@ -47,8 +49,8 @@ public class BoardCommentRestController {
 	
 	@Async
 	@GetMapping("/reply/list_vue")
-	public ResponseEntity<Map> board_list(@RequestParam("board_no") int board_no, @RequestParam("page") int page) {
-		Map map=new HashMap();
+	public ResponseEntity<Map<String,Object>> board_list(@RequestParam("board_no") int board_no, @RequestParam("page") int page) {
+		Map<String,Object> map=new HashMap<>();
 		try {
 			map=commentListData(page, board_no);
 		} catch (Exception e) {
@@ -67,8 +69,8 @@ public class BoardCommentRestController {
 	 */
 	// 내장 객체 => @Controller / @RestController
 	// => DispatcherServlet 연결
-	public ResponseEntity<Map> reply_insert(@RequestBody BootCommentVO vo, HttpSession session){
-		Map map=new HashMap();
+	public ResponseEntity<Map<String,Object>> reply_insert(@RequestBody BootCommentVO vo, HttpSession session){
+		Map<String,Object> map=new HashMap<>();
 		try {
 			String id=(String)session.getAttribute("userid");
 			String name=(String)session.getAttribute("username");
@@ -89,8 +91,8 @@ public class BoardCommentRestController {
 	}
 	
 	@PostMapping("/reply/rereply_insert_vue")
-	public ResponseEntity<Map> rereply_insert(@RequestBody BootCommentVO vo,HttpSession session){
-		Map map=new HashMap<>();
+	public ResponseEntity<Map<String,Object>> rereply_insert(@RequestBody BootCommentVO vo,HttpSession session){
+		Map<String,Object> map=new HashMap<>();
 		try {
 			BootCommentVO pvo=bMapper.boardParentInfoData(vo.getNo());
 			bMapper.boardGroupStepIncrement(pvo.getGroup_id(), pvo.getGroup_step());
@@ -103,7 +105,9 @@ public class BoardCommentRestController {
 			bMapper.boardCommentReReply(vo);
 			bMapper.boardDepthIncrement(vo.getNo());
 			if(!pvo.getId().equals(vo.getId())) {
-				template.convertAndSend("/sub/notice/"+pvo.getId(),"[📢댓글 알림]"+vo.getId()+"님이 댓글을 달았습니다");
+//				template.convertAndSend("/sub/notice/"+pvo.getId(),"[📢댓글 알림]"+vo.getId()+"님이 댓글을 달았습니다");
+				ChatMessage notice=new ChatMessage(vo.getId(),pvo.getId(),"[📢댓글 알림]"+vo.getId()+"님이 댓글을 달았습니다");
+				nProducer.sendNotice(notice);
 			}
 			map=commentListData(vo.getPage(), vo.getBoard_no());
 		} catch (Exception ex) {
